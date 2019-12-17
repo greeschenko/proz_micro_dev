@@ -35,6 +35,22 @@ type Result struct {
 	StartDate     string `gorm:"column:startDate"`
 }
 
+func init() {
+	connectstr := fmt.Sprintf(
+		"%s:%s@tcp(localhost:3336)/%s?charset=utf8&parseTime=True&loc=Local",
+		Dbuser,
+		Dbpass,
+		Dbname,
+	)
+	db, err := gorm.Open("mysql", connectstr)
+	if err != nil {
+		panic(err)
+	} else {
+		fmt.Println("connected...")
+	}
+	DB = db
+}
+
 func getItemsAddresses(proid string) string {
 	res := ""
 	type AddressRes struct {
@@ -59,7 +75,7 @@ func getItemsAddresses(proid string) string {
 			FROM proauction2_items
 			LEFT JOIN proauction2_addresses
 				ON proauction2_addresses.proid = proauction2_items.address
-			WHERE proauction2_items.owner_id = ?`, proid).Scan(&addrres)
+			WHERE proauction2_items.owner_type LIKE '%Proauctions' AND proauction2_items.owner_id = ?`, proid).Scan(&addrres)
 
 	for k, v := range addrres {
 		res += fmt.Sprintf(
@@ -95,7 +111,7 @@ func getItemsClasif(proid string) string {
 			FROM proauction2_items
 			LEFT JOIN proauction2_class
 				ON proauction2_class.proid = proauction2_items.classification
-			WHERE proauction2_items.owner_id = ?`, proid).Scan(&addrres)
+			WHERE proauction2_items.owner_type LIKE '%Proauctions' AND proauction2_items.owner_id = ?`, proid).Scan(&addrres)
 
 	for k, v := range addrres {
 		res += fmt.Sprintf(
@@ -125,7 +141,7 @@ func getItemsUnits(proid string) string {
 				proauction2_items.quantity,
 				proauction2_items.unit_name
 			FROM proauction2_items
-			WHERE proauction2_items.owner_id = ?`, proid).Scan(&addrres)
+			WHERE proauction2_items.owner_type LIKE '%Proauctions' AND proauction2_items.owner_id = ?`, proid).Scan(&addrres)
 
 	for k, v := range addrres {
 		res += fmt.Sprintf(
@@ -155,7 +171,9 @@ func getContractPrice(proid string, status string) string {
 				FROM proauction2_contracts
 				LEFT JOIN proauction2_values
 					ON proauction2_values.proid = proauction2_contracts.value
-				WHERE proauction2_contracts.owner_id = ? AND proauction2_contracts.status = "active"`, proid).Scan(&addrres)
+				WHERE proauction2_contracts.owner_type LIKE '%Proauctions'
+						AND proauction2_contracts.owner_id = ?
+						AND proauction2_contracts.status = "active"`, proid).Scan(&addrres)
 
 		fmt.Println(addrres.Amount)
 		res = addrres.Amount
@@ -200,22 +218,6 @@ func getAuctionNumber(dgfID string, lotIdentifier string) string {
 
 func getUrl(proid string) string {
 	return Domen + "/prozorrosale2/auctions/" + proid
-}
-
-func init() {
-	connectstr := fmt.Sprintf(
-		"%s:%s@tcp(localhost:3336)/%s?charset=utf8&parseTime=True&loc=Local",
-		Dbuser,
-		Dbpass,
-		Dbname,
-	)
-	db, err := gorm.Open("mysql", connectstr)
-	if err != nil {
-		panic(err)
-	} else {
-		fmt.Println("connected...")
-	}
-	DB = db
 }
 
 func main() {
